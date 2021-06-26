@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Kana-board: Favorites
+{% endblock %}
+
+{% block body %}
+    <div id="faveOptions">
+        <tr>
+            <td><input type="radio" id="wordsBtn" name="radioBtn" value="words">Words (Kanji)</td>
+            <td><input type="radio" id="phrasesBtn" name="radioBtn" value="phrases">Phrases (Kana + Kanji)</td>
+        </tr>
+    </div>
+
+	<div id="divFavorites"></div>
+{% endblock %}
+
+{% block scripts %}
+	<script src="static/favorites.js"></script>
+{% endblock scripts %}

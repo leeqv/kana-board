@@ -1,0 +1,225 @@
+main
+{
+    overflow-x: auto;
+    text-align: center;
+}
+
+.container {
+    max-width: 600px;
+    min-width: 300px;
+
+}
+
+.modal-footer {
+    border-top: 0 none;
+}
+
+.navbar {
+	font-size: 16px;
+	height: 45px;
+}
+
+.div-instructions {
+    font-size: 14px;
+    height: auto;
+    margin: 5px;
+    text-align: center;
+}
+
+.div-inputbox {
+    display: flex;
+    height: 150px;
+    margin: auto;
+}
+
+textarea {
+    height: 100%;
+    width: 95%;
+    resize: none;
+}
+
+.div-btns-left {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+}
+
+.div-btns-mid {
+    flex: 30 1 auto;
+}
+
+.div-btns-right {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    justify-content: space-between;
+}
+
+#clearBtn {
+    align-self: flex-end;
+}
+
+.div-btns {
+    display: flex;
+    justify-content: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.div-kanji {
+    padding-top: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+form {
+    display: flex;
+}
+
+#input4KanjiBox {
+    width: 135px;
+}
+
+#kanjiDiv {
+    max-width: 400px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin: auto;
+    justify-content: center;
+}
+
+.credits {
+    padding: 30px;
+}
+
+.btnKanjiDiv {
+    width: 20%;
+}
+
+.definition {
+    font-size: 12px;
+}
+
+.checked {
+    display: flex;
+    flex-direction: row;
+}
+
+.btnKanjiText {
+    margin: 5px;
+}
+
+.heartBtn {
+    margin: 5px;
+    font-size: 16px;
+}
+
+.heartBtn:hover {
+    color: black;
+}
+
+.definition {
+    margin: 5px;
+}
+
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 26px;
+    line-height: 26px;
+    text-align: center;
+}
+
+/** SIGN UP **/
+.signup-form {
+    margin: 30px auto;
+    width: 200px;
+}
+
+.signup-form > form {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.alert {
+    margin: 30px auto;
+    width: max-content;
+    max-width: 400px;
+}
+
+/** FAVORITES **/
+input[type="radio"] {
+  margin-right: 5px;
+}
+
+#divFavorites {
+    width: 100%;
+    display: flex;
+    margin: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+}
+
+.cardDivFaves {
+    padding: 5px;
+    margin: 5px;
+    border: solid skyblue 2px;
+    width: 180px;
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+}
+
+.topDivFaves {
+    font-size: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.kanjiDivFaves {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.readingSpanFaves{
+    font-size: 13px;
+    padding-left: 5px;
+}
+
+.defDivFaves {
+    width: 100%;
+    text-align: left;
+    overflow-wrap: break-word;
+}
+
+.phrasesDivFaves {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+    min-width: 200px;
+}
+
+.rowDivFaves {
+    display: flex;
+    align-items: center;
+}
+
+.favesBtn {
+    padding: 5px;
+    flex: 1 1 auto;
+}
+
+.phraseDivFaves {
+    overflow-wrap: break-word;
+    flex: 80 1 0;
+    text-align: left;
+    border: solid skyblue 2px;
+    padding: 5px;
+    margin: 5px;
+}

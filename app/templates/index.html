@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Kana-board
+{% endblock %}
+
+{% block body %}
+		<div class="div-instructions">
+			<span>
+				✧ Online Japanese keyboard ✧
+			</span>
+			<br/>
+			<span>
+				✧ lowercase: ひらがな ✧	UPPERCASE: カタカナ ✧
+			</span>
+		</div>
+
+		<div class="div-inputbox">
+			<div class="div-btns-left">
+				<button id="clearBtn" class="btn btn-dark"><i class="fa fa-eraser"></i></button>
+			</div>
+
+			<div class="div-btns-mid">
+				<textarea type=text autofocus id="inputKanaBox" name="inputKanaBox" maxlength="160" placeholder="type here for kana"></textarea>
+			</div>
+
+			<div class="div-btns-right">
+				<div>
+					<button id="favePhraseBtn" class="btn btn-dark"><i class="fa fa-heart-o"></i></button>
+				</div>
+				<div>
+					<button id="copyBtn" class="btn btn-dark"><i class="fa fa-copy"></i></button>
+				</div>
+			</div>
+		</div>
+
+		<div class="div-kanji">
+			<form method="post">
+				<input type=text id="input4KanjiBox" name="input4KanjiBox" class="mr-1" value='{{ session["input4kanji"] }}' maxlength="8" placeholder="type kanji reading" autocomplete="off">
+				<a href='#' id="kanjiGetBtn"><button class="btn btn-dark">Get kanji</button></a>
+			</form>
+		</div>
+
+		<div>
+			<input type="checkbox" id="defOption" name="defOption" value="def">
+			<label for="defOption"> Show definitions </label> <br>
+			<div id="kanjiDiv"></div>
+		</div>
+
+		<div class="credits small">
+			<span>Uses API from <a href="https://jisho.org/">jisho.org</a></span>
+		</div>
+{% endblock %}
+
+{% block scripts %}
+	<script src="static/kana.js" charset="utf-8"></script>
+{% endblock scripts %}

@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Kana-board: Sign-up
+{% endblock %}
+
+{% block body %}
+
+{% with messages = get_flashed_messages() %}
+	{% if messages %}
+	    <div class="alert alert-danger">
+	        {{ messages[0] }}
+	    </div>
+	{% endif %}
+{% endwith %}
+
+	<div class="signup-form">
+		<form action="/signup" method="post" autocomplete="off" >
+	        <div class="form-group">
+	            <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text" id="usernameBtn" required readonly onfocus="this.removeAttribute('readonly');">
+	        </div>
+
+	        <div class="form-group">
+	            <input class="form-control" name="password" placeholder="Password" type="password" required readonly onfocus="this.removeAttribute('readonly');">
+	        </div>
+
+	        <div class="form-group">
+	            <input class="form-control" name="confirmation" placeholder="Confirm password" type="password" required readonly onfocus="this.removeAttribute('readonly');">
+	        </div>
+
+	        <button class="btn btn-dark" type="submit" id="registerBtn">Register</button>
+	    </form>
+    </div>
+{% endblock %}
