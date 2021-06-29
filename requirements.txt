@@ -1,3 +1,4 @@
+alembic==1.6.5
 appdirs==1.4.4
 asgiref==3.3.1
 beautifulsoup4==4.9.3
@@ -16,10 +17,13 @@ EasyProcess==0.3
 entrypoint2==0.2.3
 filelock==3.0.12
 Flask==1.1.2
+Flask-Migrate==3.0.1
 Flask-Session==0.3.2
 Flask-Sessions==0.1.5
+Flask-SQLAlchemy==2.5.1
 fpdf==1.7.2
 GetOldTweets3==0.0.11
+greenlet==1.1.0
 gunicorn==20.1.0
 idna==2.10
 imageio==2.9.0
@@ -28,6 +32,7 @@ itsdangerous==1.1.0
 Jinja2==2.11.3
 libsass==0.21.0
 lxml==4.6.2
+Mako==1.1.4
 Markdown==3.3.4
 MarkupSafe==1.1.1
 moviepy==1.0.3
@@ -40,6 +45,7 @@ proglog==0.1.9
 pyquery==1.4.3
 pyscreenshot==2.2
 python-dateutil==2.8.1
+python-editor==1.0.4
 pytz==2020.5
 rcssmin==1.0.6
 requests==2.25.1
@@ -47,6 +53,7 @@ rjsmin==1.1.0
 selenium==3.141.0
 six==1.15.0
 soupsieve==2.1
+SQLAlchemy==1.4.19
 sqlparse==0.4.1
 tqdm==4.54.1
 urllib3==1.26.2

@@ -4,12 +4,13 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash, safe_str_cmp
-import sqlite3
 import requests
 import json
 import urllib.parse
 from functools import wraps
 import re
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 def login_required(f):
     """
@@ -27,6 +28,9 @@ def login_required(f):
 
 # Configure application
 app = Flask(__name__)
+
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -85,19 +89,13 @@ def kanji_get():
                     word = data[i]["japanese"][j]["word"]
                     kanji_list.append(word)
 
-                    # Establish sqlite3 connection
-                    conn = sqlite3.connect("kanaboard.db")
-                    cur = conn.cursor()
-
                     # Check if user already saved the word
-                    cur.execute("SELECT word FROM favorites WHERE user_id = ? AND word = ?", (USER_ID, word))
-                    get_word = cur.fetchall()
+                    get_word = db.execute("SELECT word FROM favorites WHERE user_id = ? AND word = ?", USER_ID, word)
 
                     # Error checking
                     if (len(get_word) > 0):
                         faves.append(word)
 
-                    conn.close()
 
     for i in range(0, len_t, 1):
         kanji_def.append(data[i]["senses"][0]["english_definitions"])
@@ -115,20 +113,10 @@ def kanji_save():
         kanji_def = request.args.get("kanjiDef")
         kanji_reading = request.args.get("kanjiReading", 0, type=str)
 
-        # Establish sqlite3 connection
-        conn = sqlite3.connect("kanaboard.db")
-        cur = conn.cursor()
-
         # Check first if user already saved the word
-        cur.execute("SELECT word FROM favorites WHERE user_id = ? AND word = ?", (USER_ID, kanji_word))
-        get_word = cur.fetchall()
-
+        get_word = db.execute("SELECT word FROM favorites WHERE user_id = ? AND word = ?", USER_ID, kanji_word)
         # Insert user's inputs to db
-        cur.execute("INSERT INTO favorites(user_id, word, definition, reading) VALUES(?, ?, ?, ?)",
-                    (USER_ID, kanji_word, kanji_def, kanji_reading))
-        conn.commit()
-
-        conn.close()
+        db.execute("INSERT INTO favorites(user_id, word, definition, reading) VALUES(?, ?, ?, ?)", USER_ID, kanji_word, kanji_def, kanji_reading)
 
         return jsonify(response=f"Successfully saved {kanji_word} to Favorites.")
 
@@ -136,16 +124,7 @@ def kanji_save():
 @app.route("/kanjiDelete")
 def kanji_delete():
     kanji_word = request.args.get("kanjiWord", 0, type=str)
-
-    # Establish sqlite3 connection
-    conn = sqlite3.connect("kanaboard.db")
-    cur = conn.cursor()
-
-    # Check first if user already saved the word
-    cur.execute("DELETE FROM favorites WHERE user_id = ? AND word = ?", (USER_ID, kanji_word))
-    conn.commit()
-
-    conn.close()
+    db.execute("DELETE FROM favorites WHERE user_id = ? AND word = ?", USER_ID, kanji_word)
 
     return jsonify(response=f"Successfully deleted {kanji_word} in Favorites.")
 
@@ -158,22 +137,13 @@ def phrase_save():
     else:
         phrase = request.args.get("phrase", 0, type=str)
 
-        # Establish sqlite3 connection
-        conn = sqlite3.connect("kanaboard.db")
-        cur = conn.cursor()
-
         # Check first if user already saved the word
-        cur.execute("SELECT phrase FROM fave_phrases WHERE user_id = ? AND phrase = ?", (USER_ID, phrase))
-        get_word = cur.fetchall()
-
+        get_word = db.execute("SELECT phrase FROM fave_phrases WHERE user_id = ? AND phrase = ?", USER_ID, phrase)
         if (len(get_word) > 0):
             return jsonify(response="Already in favorites.")
 
         # Insert user's inputs to db
-        cur.execute("INSERT INTO fave_phrases(user_id, phrase) VALUES(?, ?)", (USER_ID, phrase))
-        conn.commit()
-
-        conn.close()
+        db.execute("INSERT INTO fave_phrases(user_id, phrase) VALUES(?, ?)", USER_ID, phrase)
 
         return jsonify(response=f'Successfully saved "{phrase}" to Favorites.')
 
@@ -181,16 +151,7 @@ def phrase_save():
 @app.route("/phraseDelete")
 def phrase_delete():
     phrase = request.args.get("phrase", 0, type=str)
-
-    # Establish sqlite3 connection
-    conn = sqlite3.connect("kanaboard.db")
-    cur = conn.cursor()
-
-    # Check first if user already saved the word
-    cur.execute("DELETE FROM fave_phrases WHERE user_id = ? AND phrase = ?", (USER_ID, phrase))
-    conn.commit()
-
-    conn.close()
+    db.execute("DELETE FROM fave_phrases WHERE user_id = ? AND phrase = ?", USER_ID, phrase)
 
     return jsonify(response=f"Successfully deleted {phrase} in Favorites.")
 
@@ -225,28 +186,18 @@ def signup():
         # Make hash
         hash_password = generate_password_hash(password, method="pbkdf2:sha256", salt_length=8)
 
-        # Establish sqlite3 connection
-        conn = sqlite3.connect("kanaboard.db")
-        cur = conn.cursor()
-
-        cur.execute("SELECT username FROM users WHERE username = ?", (name,))
-        get_name = cur.fetchall()
-
         # Error checking
+        get_name = db.execute("SELECT username FROM users WHERE username = ?", (name,))
         if (len(get_name) > 0):
-            conn.close()
             errorbox = "username"
             flash(f'Username "{name}" already exists. Please try another one.')
             return render_template("signup.html", errorbox=errorbox)
 
         # Insert user's inputs to db
-        cur.execute("INSERT INTO users(username, hash) VALUES(?, ?)", (name, hash_password))
-        conn.commit()
-
-        cur.execute("SELECT * FROM users WHERE username = ?", (name,))
-        get_id = int(cur.fetchall()[0][0])
+        db.execute("INSERT INTO users(username, hash) VALUES(?, ?)", name, hash_password)
+        fetched = db.execute("SELECT * FROM users WHERE username = ?", (name,))
+        get_id = int(fetched[0]["id"])
         session["user_id"] = get_id
-        conn.close()
 
         global USER_ID
         USER_ID = get_id
@@ -261,14 +212,9 @@ def signup():
 def login():
     # Save previous input before logging in
     if request.method == "POST":
-        conn = sqlite3.connect("kanaboard.db")
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-
         # Query database for username
         username = request.form.get("username")
-        cur.execute("SELECT * FROM users WHERE username = ?", (username,))
-        rows = cur.fetchall()
+        rows = db.execute("SELECT * FROM users WHERE username = ?", username)
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
@@ -292,28 +238,27 @@ def login():
 def get_favorites():
     fave_option = request.args.get("faveOption")
 
-    # Establish sqlite3 connection
-    conn = sqlite3.connect("kanaboard.db")
-    cur = conn.cursor()
-
     if (fave_option == "words"):
         fave_words = []
-        cur.execute("SELECT word,definition,reading FROM favorites WHERE user_id = ?", (USER_ID,))
+        fetched = db.execute("SELECT word,definition,reading FROM favorites WHERE user_id = ?", USER_ID)
 
         words_list = []
         words_reading = []
         words_def = []
 
-        for word, definition, reading in cur.fetchall():
-            words_list.append(word)
-            words_reading.append(reading)
-            words_def.append(definition)
+        for kanji in fetched:
+            words_list.append(kanji["word"])
+            words_reading.append(kanji["reading"])
+            words_def.append(kanji["definition"])
 
         return jsonify(words=words_list, reading=words_reading, definition=words_def)
 
     elif (fave_option == "phrases"):
-        cur.execute("SELECT phrase FROM fave_phrases WHERE user_id = ?", (USER_ID,))
-        phrases_list = cur.fetchall()
+        fetched = db.execute("SELECT phrase FROM fave_phrases WHERE user_id = ?", USER_ID)
+        phrases_list = []
+        for phrase in fetched:
+            phrases_list.append(phrase["phrase"])
+
         return jsonify(phrases=phrases_list)
 
 
