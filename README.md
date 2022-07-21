@@ -23,11 +23,14 @@ Search the Jisho API and pick a kanji to include in your sentence.
 ### Save kanji
 <img src="media/save-kanji.gif" height="300">
 
-### Technologies used
+## Technologies used
 - Python 3.9.1
 - jQuery 3.5.1
 - Bootstrap 4
 
-### Credits
+## Credits
 - Kanji search made possible using [Jisho.org](https://jisho.org/about) API  
 - This project was inspired by Lexilogos multilingual keyboard ([Japanese](https://www.lexilogos.com/keyboard/japanese.php))
+
+## TODO
+- Fix Flask session cookie behavior as sessions do not persist in the deployed app on Heroku.
