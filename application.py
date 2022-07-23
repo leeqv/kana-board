@@ -9,8 +9,11 @@ import json
 import urllib.parse
 from functools import wraps
 import re
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
+import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, Integer, Text, ForeignKey
 
 def login_required(f):
     """
@@ -30,6 +33,27 @@ def login_required(f):
 app = Flask(__name__)
 
 engine = create_engine(os.getenv("DATABASE_URL"))
+
+Base = declarative_base()
+
+class Users(Base):
+    __tablename__ = 'users'
+    id = sqlalchemy.Column(Integer, primary_key=True)
+    username = sqlalchemy.Column(Text)
+    hash = sqlalchemy.Column(Text)
+
+class Favorites(Base):
+    __tablename__ = 'favorites'
+    user_id = sqlalchemy.Column(Integer, ForeignKey("users.id"), primary_key=True)
+    word = sqlalchemy.Column(Text, primary_key=True)
+    definition = sqlalchemy.Column(Text)
+    reading = sqlalchemy.Column(Text)
+
+class FavePhrases(Base):
+    __tablename__ = 'fave_phrases'
+    user_id = sqlalchemy.Column(Integer, ForeignKey("users.id"), primary_key=True)
+    phrase = sqlalchemy.Column(Text, primary_key=True)
+
 db = scoped_session(sessionmaker(bind=engine))
 
 # Ensure templates are auto-reloaded
@@ -90,11 +114,12 @@ def kanji_get():
                     kanji_list.append(word)
 
                     # Check if user already saved the word
-                    get_word = db.execute("SELECT word FROM favorites WHERE user_id = ? AND word = ?", USER_ID, word)
+                    if (session.get('user_id') is not None):
+                        get_word = db.query(Favorites).filter_by(user_id=session["user_id"], word=word).first()
 
-                    # Error checking
-                    if (len(get_word) > 0):
-                        faves.append(word)
+                        # Error checking
+                        if (get_word != None):
+                            faves.append(word)
 
 
     for i in range(0, len_t, 1):
@@ -113,18 +138,17 @@ def kanji_save():
         kanji_def = request.args.get("kanjiDef")
         kanji_reading = request.args.get("kanjiReading", 0, type=str)
 
-        # Check first if user already saved the word
-        get_word = db.execute("SELECT word FROM favorites WHERE user_id = ? AND word = ?", USER_ID, kanji_word)
-        # Insert user's inputs to db
-        db.execute("INSERT INTO favorites(user_id, word, definition, reading) VALUES(?, ?, ?, ?)", USER_ID, kanji_word, kanji_def, kanji_reading)
-
+        db.add(Favorites(user_id=session["user_id"], word=kanji_word, definition=kanji_def, reading=kanji_reading))
+        db.commit()
         return jsonify(response=f"Successfully saved {kanji_word} to Favorites.")
 
 
 @app.route("/kanjiDelete")
 def kanji_delete():
     kanji_word = request.args.get("kanjiWord", 0, type=str)
-    db.execute("DELETE FROM favorites WHERE user_id = ? AND word = ?", USER_ID, kanji_word)
+    fetched = db.query(Favorites).filter_by(user_id=session["user_id"], word=kanji_word).first()
+    db.delete(fetched)
+    db.commit()
 
     return jsonify(response=f"Successfully deleted {kanji_word} in Favorites.")
 
@@ -138,12 +162,13 @@ def phrase_save():
         phrase = request.args.get("phrase", 0, type=str)
 
         # Check first if user already saved the word
-        get_word = db.execute("SELECT phrase FROM fave_phrases WHERE user_id = ? AND phrase = ?", USER_ID, phrase)
-        if (len(get_word) > 0):
+        get_word = db.query(FavePhrases).filter_by(user_id=session["user_id"], phrase=phrase).first()
+        if (get_word != None):
             return jsonify(response="Already in favorites.")
 
         # Insert user's inputs to db
-        db.execute("INSERT INTO fave_phrases(user_id, phrase) VALUES(?, ?)", USER_ID, phrase)
+        db.add(FavePhrases(user_id=session["user_id"], phrase=phrase))
+        db.commit()
 
         return jsonify(response=f'Successfully saved "{phrase}" to Favorites.')
 
@@ -151,7 +176,9 @@ def phrase_save():
 @app.route("/phraseDelete")
 def phrase_delete():
     phrase = request.args.get("phrase", 0, type=str)
-    db.execute("DELETE FROM fave_phrases WHERE user_id = ? AND phrase = ?", USER_ID, phrase)
+    fetched = db.query(FavePhrases).filter_by(user_id=session["user_id"], phrase=phrase).first()
+    db.delete(fetched)
+    db.commit()
 
     return jsonify(response=f"Successfully deleted {phrase} in Favorites.")
 
@@ -187,16 +214,18 @@ def signup():
         hash_password = generate_password_hash(password, method="pbkdf2:sha256", salt_length=8)
 
         # Error checking
-        get_name = db.execute("SELECT username FROM users WHERE username = ?", (name,))
-        if (len(get_name) > 0):
+        get_name = db.query(Users).filter_by(username=name).first()
+        if (get_name != None):
             errorbox = "username"
             flash(f'Username "{name}" already exists. Please try another one.')
             return render_template("signup.html", errorbox=errorbox)
 
         # Insert user's inputs to db
-        db.execute("INSERT INTO users(username, hash) VALUES(?, ?)", name, hash_password)
-        fetched = db.execute("SELECT * FROM users WHERE username = ?", (name,))
-        get_id = int(fetched[0]["id"])
+        db.add(Users(username=name, hash=hash_password))
+        db.commit()
+
+        fetched = db.query(Users).filter_by(username=name).first()
+        get_id = int(fetched.id)
         session["user_id"] = get_id
 
         global USER_ID
@@ -213,18 +242,18 @@ def login():
     # Save previous input before logging in
     if request.method == "POST":
         # Query database for username
-        username = request.form.get("username")
-        rows = db.execute("SELECT * FROM users WHERE username = ?", username)
+        name = request.form.get("username")
+        fetched = db.query(Users).filter_by(username=name).first()
 
         # Ensure username exists and password is correct
-        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+        if fetched == None or not check_password_hash(fetched.hash, request.form.get("password")):
             flash("Invalid username/password.")
             return redirect("/login")
 
         # Remember which user has logged in
-        session["user_id"] = rows[0]["id"]
+        session["user_id"] = fetched.id
         global USER_ID
-        USER_ID = rows[0]["id"]
+        USER_ID = fetched.id
 
         # Redirect user to home page
         return redirect("/")
@@ -239,25 +268,24 @@ def get_favorites():
     fave_option = request.args.get("faveOption")
 
     if (fave_option == "words"):
-        fave_words = []
-        fetched = db.execute("SELECT word,definition,reading FROM favorites WHERE user_id = ?", USER_ID)
+        fetched = db.query(Favorites).filter_by(user_id=session["user_id"]).all()
 
         words_list = []
         words_reading = []
         words_def = []
 
         for kanji in fetched:
-            words_list.append(kanji["word"])
-            words_reading.append(kanji["reading"])
-            words_def.append(kanji["definition"])
+            words_list.append(kanji.word)
+            words_reading.append(kanji.reading)
+            words_def.append(kanji.definition)
 
         return jsonify(words=words_list, reading=words_reading, definition=words_def)
 
     elif (fave_option == "phrases"):
-        fetched = db.execute("SELECT phrase FROM fave_phrases WHERE user_id = ?", USER_ID)
+        fetched = db.query(FavePhrases).filter_by(user_id=session["user_id"]).all()
         phrases_list = []
         for phrase in fetched:
-            phrases_list.append(phrase["phrase"])
+            phrases_list.append(phrase.phrase)
 
         return jsonify(phrases=phrases_list)
 
