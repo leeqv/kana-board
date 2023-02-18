@@ -5,7 +5,7 @@ Online Japanese keyboard made with Python Flask and JS. Includes romaji to hirag
 Project for CS50.
 
 ## Demo
-Working live demo: https://kana-board.herokuapp.com/
+Working live demo: https://kanaboard.pythonanywhere.com/
 
 ## Features
 
